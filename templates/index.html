@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AI Health Risk Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --surface: #111520;
+      --card: #161c2e;
+      --border: rgba(99,179,255,0.12);
+      --accent: #3b82f6;
+      --accent2: #06d6a0;
+      --accent3: #f72585;
+      --text: #e8eaf6;
+      --muted: #7b8ab8;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated background grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+    }
+
+    .glow-orb {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.18;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .orb1 { width: 500px; height: 500px; background: #3b82f6; top: -100px; left: -100px; }
+    .orb2 { width: 400px; height: 400px; background: #06d6a0; bottom: -100px; right: -100px; }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 52px;
+      animation: fadeDown 0.7s ease both;
+    }
+
+    .badge {
+      display: inline-block;
+      background: rgba(59,130,246,0.12);
+      border: 1px solid rgba(59,130,246,0.3);
+      color: var(--accent);
+      font-family: var(--font-head);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 16px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #e8eaf6 0%, #63b3ff 50%, #06d6a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 14px;
+    }
+
+    header p {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 480px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      animation: fadeUp 0.8s ease 0.2s both;
+    }
+
+    .section-label {
+      font-family: var(--font-head);
+      font-size: 11px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .section-label::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 28px;
+      transition: border-color 0.3s;
+    }
+    .card:hover { border-color: rgba(99,179,255,0.25); }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .field { display: flex; flex-direction: column; gap: 8px; }
+
+    label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .field-value {
+      font-family: var(--font-head);
+      font-weight: 700;
+      font-size: 15px;
+      color: var(--accent2);
+      margin-left: auto;
+    }
+
+    input[type="number"], select {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      width: 100%;
+    }
+    input[type="number"]:focus, select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+    }
+    select option { background: #161c2e; }
+
+    input[type="range"] {
+      width: 100%;
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.08);
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(59,130,246,0.5);
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+    .label-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .submit-btn {
+      position: relative;
+      background: linear-gradient(135deg, var(--accent), #1d4ed8);
+      color: white;
+      font-family: var(--font-head);
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      border: none;
+      padding: 18px 40px;
+      border-radius: 12px;
+      cursor: pointer;
+      overflow: hidden;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 8px 30px rgba(59,130,246,0.3);
+    }
+    .submit-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(59,130,246,0.45);
+    }
+    .submit-btn:active { transform: translateY(0); }
+    .submit-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb orb1"></div>
+  <div class="glow-orb orb2"></div>
+
+  <div class="container">
+    <header>
+      <div class="badge">⚡ AI-Powered Health Intelligence</div>
+      <h1>Know Your Risk<br>Before Symptoms Appear</h1>
+      <p>Enter your daily lifestyle habits and get an instant, explainable AI assessment of your health risks.</p>
+    </header>
+
+    <form action="/analyze" method="POST">
+
+      <!-- Basic Info -->
+      <div class="card">
+        <div class="section-label">👤 Basic Info</div>
+        <div class="grid-2">
+          <div class="field">
+            <label>Age (years)</label>
+            <input type="number" name="age" min="10" max="90" value="25" required />
+          </div>
+          <div class="field">
+            <label>BMI</label>
+            <input type="number" name="bmi" min="10" max="50" step="0.1" value="22" required />
+          </div>
+          <div class="field">
+            <label>Fasting Glucose (mg/dL)</label>
+            <input type="number" name="glucose" min="50" max="300" value="95" required />
+          </div>
+          <div class="field">
+            <label>Diet Type</label>
+            <select name="diet">
+              <option value="healthy">🥗 Healthy</option>
+              <option value="mixed" selected>🍱 Mixed</option>
+              <option value="junk">🍔 Junk</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lifestyle Sliders -->
+      <div class="card">
+        <div class="section-label">🌿 Daily Lifestyle</div>
+
+        <div class="field" style="margin-bottom:20px">
+          <div class="label-row">
+            <label>🌙 Sleep Hours</label>
+            <span class="field-value" id="sleep-val">7 hrs</span>
+          </div>
+          <input type="range" name="sleep" id="sleep" min="2" max="12" step="0.5" value="7"
+                 oninput="document.getElementById('sleep-val').textContent = this.value + ' hrs'"/>
+        </div>
+
+        <div class="field" style="margin-bottom:20px">
+          <div class="label-row">
+            <label>💧 Water Intake</label>
+            <span class="field-value" id="water-val">2 L</span>
+          </div>
+          <input type="range" name="water" id="water" min="0.5" max="5" step="0.5" value="2"
+                 oninput="document.getElementById('water-val').textContent = this.value + ' L'"/>
+        </div>
+
+        <div class="field" style="margin-bottom:20px">
+          <div class="label-row">
+            <label>📱 Screen Time</label>
+            <span class="field-value" id="screen-val">4 hrs</span>
+          </div>
+          <input type="range" name="screen_time" id="screen_time" min="0" max="16" step="0.5" value="4"
+                 oninput="document.getElementById('screen-val').textContent = this.value + ' hrs'"/>
+        </div>
+
+        <div class="field">
+          <div class="label-row">
+            <label>🏃 Exercise</label>
+            <span class="field-value" id="exercise-val">30 mins</span>
+          </div>
+          <input type="range" name="exercise" id="exercise" min="0" max="120" step="5" value="30"
+                 oninput="document.getElementById('exercise-val').textContent = this.value + ' mins'"/>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn">⚡ Analyze My Health Risk →</button>
+    </form>
+  </div>
+</body>
+</html>

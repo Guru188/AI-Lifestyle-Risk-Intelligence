@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Your Health Risk Report</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg: #0a0d14;
+      --surface: #111520;
+      --card: #161c2e;
+      --border: rgba(99,179,255,0.12);
+      --accent: #3b82f6;
+      --accent2: #06d6a0;
+      --accent3: #f72585;
+      --warn: #f59e0b;
+      --text: #e8eaf6;
+      --muted: #7b8ab8;
+      --font-head: 'Syne', sans-serif;
+      --font-body: 'DM Sans', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: 0;
+    }
+
+    .glow-orb {
+      position: fixed; border-radius: 50%;
+      filter: blur(80px); opacity: 0.15;
+      z-index: 0; pointer-events: none;
+    }
+    .orb1 { width: 500px; height: 500px; background: #3b82f6; top: -100px; right: -100px; }
+    .orb2 { width: 400px; height: 400px; background: #f72585; bottom: -100px; left: -100px; }
+
+    .container {
+      position: relative; z-index: 1;
+      max-width: 900px; margin: 0 auto;
+      padding: 40px 24px 80px;
+    }
+
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 40px;
+      animation: fadeDown 0.6s ease both;
+    }
+
+    .back-btn {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: var(--font-body);
+      font-size: 13px;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    .header-title { font-family: var(--font-head); font-size: 1.1rem; font-weight: 700; color: var(--muted); }
+
+    /* HEALTH SCORE */
+    .score-section {
+      text-align: center; margin-bottom: 40px;
+      animation: fadeUp 0.7s ease 0.1s both;
+    }
+
+    .score-ring {
+      position: relative; display: inline-block;
+      width: 160px; height: 160px; margin-bottom: 16px;
+    }
+    .score-ring svg { transform: rotate(-90deg); }
+    .score-ring .score-text {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      transform: none;
+    }
+    .score-number {
+      font-family: var(--font-head);
+      font-size: 3rem; font-weight: 800;
+      line-height: 1;
+    }
+    .score-label { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); }
+    .score-title { font-family: var(--font-head); font-size: 1.5rem; font-weight: 700; margin-bottom: 6px; }
+    .score-sub { color: var(--muted); font-size: 14px; }
+
+    /* RISK GAUGES */
+    .risk-gauges {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s ease 0.2s both;
+    }
+
+    .gauge-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 24px 20px;
+      text-align: center;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .gauge-card:hover { transform: translateY(-3px); }
+
+    .gauge-icon { font-size: 28px; margin-bottom: 10px; }
+    .gauge-name {
+      font-family: var(--font-head); font-weight: 700;
+      font-size: 13px; color: var(--muted);
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .gauge-bar-wrap {
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px; height: 8px;
+      margin-bottom: 10px; overflow: hidden;
+    }
+    .gauge-bar {
+      height: 100%; border-radius: 6px;
+      transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-percent {
+      font-family: var(--font-head); font-size: 2rem; font-weight: 800;
+    }
+    .gauge-risk-label { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+    .low    { color: var(--accent2); }
+    .medium { color: var(--warn); }
+    .high   { color: var(--accent3); }
+    .bar-low    { background: var(--accent2); }
+    .bar-medium { background: var(--warn); }
+    .bar-high   { background: var(--accent3); }
+
+    /* CHART SECTION */
+    .chart-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s ease 0.3s both;
+    }
+
+    .section-label {
+      font-family: var(--font-head);
+      font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--accent);
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px;
+      background: var(--border);
+    }
+
+    .chart-wrap { position: relative; height: 220px; }
+
+    /* SIMULATION */
+    .sim-section {
+      background: var(--card);
+      border: 1px solid rgba(6,214,160,0.2);
+      border-radius: 16px; padding: 28px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s ease 0.4s both;
+    }
+
+    .sim-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+    .sim-field { display: flex; flex-direction: column; gap: 8px; }
+    .sim-label-row { display: flex; justify-content: space-between; }
+    .sim-label { font-size: 13px; color: var(--muted); }
+    .sim-val { font-family: var(--font-head); font-weight: 700; color: var(--accent2); font-size: 14px; }
+
+    input[type="range"] {
+      width: 100%; -webkit-appearance: none;
+      height: 5px; border-radius: 3px;
+      background: rgba(255,255,255,0.08);
+      outline: none; cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--accent2);
+      box-shadow: 0 0 8px rgba(6,214,160,0.5);
+    }
+
+    .sim-result {
+      margin-top: 20px; padding: 16px 20px;
+      background: rgba(6,214,160,0.06);
+      border: 1px solid rgba(6,214,160,0.2);
+      border-radius: 10px;
+      font-size: 14px; color: var(--accent2);
+      font-weight: 500; text-align: center;
+      min-height: 48px; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* EXPLANATION */
+    .explain-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 16px; padding: 28px;
+      margin-bottom: 32px;
+      animation: fadeUp 0.7s ease 0.5s both;
+    }
+
+    .reason-item {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .reason-item:last-child { border-bottom: none; }
+    .reason-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent3); margin-top: 6px; flex-shrink: 0;
+    }
+    .reason-text { font-size: 14px; line-height: 1.6; }
+
+    /* ACTION PLAN */
+    .action-section {
+      animation: fadeUp 0.7s ease 0.6s both;
+    }
+
+    .action-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+
+    .action-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px; padding: 20px;
+      display: flex; align-items: flex-start; gap: 14px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .action-card:hover { border-color: rgba(6,214,160,0.3); transform: translateY(-2px); }
+    .action-icon { font-size: 24px; flex-shrink: 0; }
+    .action-tip { font-size: 14px; line-height: 1.6; color: var(--text); }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 600px) {
+      .risk-gauges { grid-template-columns: 1fr; }
+      .sim-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow-orb orb1"></div>
+  <div class="glow-orb orb2"></div>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <a href="/" class="back-btn">← Analyze Again</a>
+      <span class="header-title">🧠 AI Health Risk Report</span>
+    </header>
+
+    <!-- Health Score Ring -->
+    <div class="score-section">
+      {% set s = risks.health_score %}
+      {% set color = '#06d6a0' if s >= 70 else ('#f59e0b' if s >= 40 else '#f72585') %}
+      {% set status = 'Healthy' if s >= 70 else ('Moderate Risk' if s >= 40 else 'High Risk') %}
+      <div class="score-ring">
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          <circle cx="80" cy="80" r="66" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="12"/>
+          <circle cx="80" cy="80" r="66" fill="none"
+            stroke="{{ color }}" stroke-width="12"
+            stroke-linecap="round"
+            stroke-dasharray="{{ (s / 100 * 414.69)|round(1) }} 414.69"
+            style="filter: drop-shadow(0 0 8px {{ color }})"/>
+        </svg>
+        <div class="score-text">
+          <span class="score-number" style="color: {{ color }}">{{ s }}</span>
+          <span class="score-label">/ 100</span>
+        </div>
+      </div>
+      <div class="score-title">{{ status }}</div>
+      <div class="score-sub">Overall Health Score based on your lifestyle inputs</div>
+    </div>
+
+    <!-- Risk Gauges -->
+    <div class="risk-gauges">
+      {% for key, icon, label in [('diabetes','🍬','Diabetes'), ('stress','🧠','Stress'), ('hypertension','❤️','Hypertension')] %}
+        {% set val = risks[key] %}
+        {% set cls = 'low' if val < 35 else ('medium' if val < 65 else 'high') %}
+        {% set risk_word = 'Low Risk' if val < 35 else ('Moderate' if val < 65 else 'High Risk') %}
+        <div class="gauge-card" style="border-color: {{ 'rgba(6,214,160,0.2)' if cls=='low' else ('rgba(245,158,11,0.2)' if cls=='medium' else 'rgba(247,37,133,0.2)') }}">
+          <div class="gauge-icon">{{ icon }}</div>
+          <div class="gauge-name">{{ label }}</div>
+          <div class="gauge-bar-wrap">
+            <div class="gauge-bar bar-{{ cls }}" style="width: {{ val }}%"></div>
+          </div>
+          <div class="gauge-percent {{ cls }}">{{ val }}%</div>
+          <div class="gauge-risk-label">{{ risk_word }}</div>
+        </div>
+      {% endfor %}
+    </div>
+
+    <!-- CHART: Before vs After Simulation -->
+    <div class="chart-section">
+      <div class="section-label">📊 Health Score — Before vs After Simulation</div>
+      <div class="chart-wrap">
+        <canvas id="scoreChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Simulation Sliders -->
+    <div class="sim-section">
+      <div class="section-label">🔮 Future Simulation — What If?</div>
+      <div class="sim-grid">
+        <div class="sim-field">
+          <div class="sim-label-row">
+            <span class="sim-label">🌙 Sleep Hours</span>
+            <span class="sim-val" id="s-sleep-val">{{ inputs.sleep }} hrs</span>
+          </div>
+          <input type="range" id="s-sleep" min="2" max="12" step="0.5" value="{{ inputs.sleep }}"
+                 oninput="updateSim('s-sleep-val', this.value, ' hrs')"/>
+        </div>
+        <div class="sim-field">
+          <div class="sim-label-row">
+            <span class="sim-label">🏃 Exercise</span>
+            <span class="sim-val" id="s-exercise-val">{{ inputs.exercise }} mins</span>
+          </div>
+          <input type="range" id="s-exercise" min="0" max="120" step="5" value="{{ inputs.exercise }}"
+                 oninput="updateSim('s-exercise-val', this.value, ' mins')"/>
+        </div>
+        <div class="sim-field">
+          <div class="sim-label-row">
+            <span class="sim-label">💧 Water Intake</span>
+            <span class="sim-val" id="s-water-val">{{ inputs.water }} L</span>
+          </div>
+          <input type="range" id="s-water" min="0.5" max="5" step="0.5" value="{{ inputs.water }}"
+                 oninput="updateSim('s-water-val', this.value, ' L')"/>
+        </div>
+        <div class="sim-field">
+          <div class="sim-label-row">
+            <span class="sim-label">📱 Screen Time</span>
+            <span class="sim-val" id="s-screen-val">{{ inputs.screen_time }} hrs</span>
+          </div>
+          <input type="range" id="s-screen" min="0" max="16" step="0.5" value="{{ inputs.screen_time }}"
+                 oninput="updateSim('s-screen-val', this.value, ' hrs')"/>
+        </div>
+      </div>
+      <div class="sim-result" id="sim-result">
+        🔮 Move the sliders to simulate how changes affect your health score
+      </div>
+    </div>
+
+    <!-- Why? Explanation -->
+    <div class="explain-section">
+      <div class="section-label">🧠 Why This Risk?</div>
+      {% for r in reasons %}
+      <div class="reason-item">
+        <div class="reason-dot"></div>
+        <div class="reason-text">{{ r }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Action Plan -->
+    <div class="action-section">
+      <div class="section-label" style="font-family:'Syne',sans-serif;font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#3b82f6;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+        🎯 Personalized Action Plan
+        <span style="flex:1;height:1px;background:rgba(99,179,255,0.12);display:block"></span>
+      </div>
+      <div class="action-grid">
+        {% for a in actions %}
+        <div class="action-card">
+          <div class="action-icon">{{ a.icon }}</div>
+          <div class="action-tip">{{ a.tip }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ── Stored original inputs from Flask ──
+    const BASE = {
+      age:         {{ inputs.age }},
+      bmi:         {{ inputs.bmi }},
+      sleep:       {{ inputs.sleep }},
+      water:       {{ inputs.water }},
+      screen_time: {{ inputs.screen_time }},
+      exercise:    {{ inputs.exercise }},
+      diet:        "{{ inputs.diet }}",
+      glucose:     {{ inputs.glucose }}
+    };
+    const BASE_SCORE = {{ risks.health_score }};
+
+    // ── Chart.js Bar Chart — 2 separate datasets for reliable coloring ──
+    const ctx = document.getElementById('scoreChart').getContext('2d');
+
+    function barColor(score) {
+      return score >= 70 ? 'rgba(6,214,160,0.85)' : score >= 40 ? 'rgba(245,158,11,0.85)' : 'rgba(247,37,133,0.85)';
+    }
+    function borderColor(score) {
+      return score >= 70 ? '#06d6a0' : score >= 40 ? '#f59e0b' : '#f72585';
+    }
+
+    const scoreChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['Current Score', 'Simulated Score'],
+        datasets: [
+          {
+            label: 'Current Score',
+            data: [BASE_SCORE, null],
+            backgroundColor: barColor(BASE_SCORE),
+            borderColor: borderColor(BASE_SCORE),
+            borderWidth: 2,
+            borderRadius: 10,
+            barThickness: 80
+          },
+          {
+            label: 'Simulated Score',
+            data: [null, BASE_SCORE],
+            backgroundColor: 'rgba(6,214,160,0.85)',
+            borderColor: '#06d6a0',
+            borderWidth: 2,
+            borderRadius: 10,
+            barThickness: 80
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` Health Score: ${ctx.parsed.y} / 100`
+            }
+          }
+        },
+        scales: {
+          y: {
+            min: 0, max: 100,
+            grid: { color: 'rgba(255,255,255,0.05)' },
+            ticks: { color: '#7b8ab8', font: { family: 'DM Sans' } }
+          },
+          x: {
+            grid: { display: false },
+            ticks: { color: '#7b8ab8', font: { family: 'Syne', weight: '700' } }
+          }
+        }
+      }
+    });
+
+    // ── Slider label updater ──
+    function updateSim(id, val, unit) {
+      document.getElementById(id).textContent = val + unit;
+      runSimulation();
+    }
+
+    // ── Debounce simulation calls ──
+    let simTimer;
+    function runSimulation() {
+      clearTimeout(simTimer);
+      simTimer = setTimeout(async () => {
+        const payload = {
+          age:         BASE.age,
+          bmi:         BASE.bmi,
+          glucose:     BASE.glucose,
+          diet:        BASE.diet,
+          sleep:       parseFloat(document.getElementById('s-sleep').value),
+          water:       parseFloat(document.getElementById('s-water').value),
+          screen_time: parseFloat(document.getElementById('s-screen').value),
+          exercise:    parseFloat(document.getElementById('s-exercise').value)
+        };
+
+        const res  = await fetch('/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const newScore = data.health_score;
+        const diff = newScore - BASE_SCORE;
+        const sign = diff >= 0 ? '+' : '';
+
+        // Update chart — dataset[1] is the Simulated Score bar
+        scoreChart.data.datasets[1].data = [null, newScore];
+        scoreChart.data.datasets[1].backgroundColor = barColor(newScore);
+        scoreChart.data.datasets[1].borderColor = borderColor(newScore);
+        scoreChart.update();
+
+        // Update result text
+        const emoji = diff > 0 ? '🟢' : diff < 0 ? '🔴' : '⚪';
+        document.getElementById('sim-result').innerHTML =
+          `${emoji} Simulated Score: <strong>${newScore}/100</strong> &nbsp;|&nbsp; Change: <strong>${sign}${diff}</strong> points from your current score`;
+      }, 300);
+    }
+  </script>
+</body>
+</html>
