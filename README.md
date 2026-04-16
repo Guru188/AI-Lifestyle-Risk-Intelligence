@@ -2,7 +2,7 @@
 
 > *Know your disease risk before symptoms appear — understand why, and simulate how small changes save your future.*
 
-Built for **APOGEE Innovation Challenge '26** | Sponsored by **BITS Pilani**
+
 
 ---
 
